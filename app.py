@@ -23,9 +23,19 @@ def extract_video_id(url):
 
 def get_transcript(video_id):
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'hi', 'en-IN'])
-        return " ".join([item['text'] for item in transcript_list])
-    except Exception:
+        # Naya logic: Ye saari available transcripts ki list nikalega
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        
+        try:
+            # Pehle English ya Hindi dhundhne ki koshish karega
+            transcript = transcript_list.find_transcript(['en', 'hi', 'en-IN', 'hi-IN'])
+        except:
+            # Agar nahi mila toh jo bhi pehla subtitle available hoga, wo utha lega
+            transcript = next(iter(transcript_list))
+            
+        data = transcript.fetch()
+        return " ".join([item['text'] for item in data])
+    except Exception as e:
         return None
 
 youtube_url = st.text_input("🔗 YouTube Video ka Link Yahan Paste Karein:")
@@ -44,7 +54,7 @@ if st.button("Notes Banayein 🚀"):
                 transcript = get_transcript(video_id)
             
             if not transcript:
-                st.error("Is video ke subtitles available nahi hain.")
+                st.error("Is video ke subtitles available nahi hain ya YouTube ne block kiye hain.")
             else:
                 with st.spinner("AI notes tayyar kar raha hai..."):
                     try:
